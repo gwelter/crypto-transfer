@@ -10,7 +10,7 @@ async function call(path, data, method = 'GET') {
   data = removeEmptyValue(data);
 
   let dataToSign = '';
-  if (!Object.keys(data).length) {
+  if (Object.keys(data).length) {
     switch (method) {
       case 'GET':
       case 'DELETE':
@@ -24,13 +24,13 @@ async function call(path, data, method = 'GET') {
     }
   }
 
-  const url = `${process.env.FTX_API_URL}${path}`
+  const url = `${process.env.FTX_API_URL}/api/${path}`
   const timestamp = Date.now();
 
   var signaturePayload = `${timestamp}${method}${path}${dataToSign}`;
+  console.log(signaturePayload);
   const signature = createHmac('sha256', apiSecret).update(signaturePayload).digest('hex');
-
-  return axios({
+  const result = await axios({
     method,
     url,
     headers: {
@@ -38,7 +38,8 @@ async function call(path, data, method = 'GET') {
       "FTX-SIGN": signature,
       "FTX-TS": timestamp
     }
-  })
+  });
+  return result.data;
 }
 
 export async function accountInfo() {
@@ -46,5 +47,9 @@ export async function accountInfo() {
 }
 
 export async function getWithdrawalFees(coin, amount, address) {
-  return call('/api/wallet/withdrawal_fee', { coin, amount, address })
+  return call('/api/wallet/withdrawal_fee', { coin, amount, address });
+}
+
+export async function saveWalletAddress(coin, address, addressName, network, code) {
+  return call('/api/wallet/saved_addresses', { coin, address, addressName, wallet: network, code }, 'POST');
 }
